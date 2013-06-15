@@ -1,8 +1,3 @@
-"""Wallbase.cc library used by wallbasefs
-
-.. moduleauthor:: Pierre Geier <pierre@neocomy.net>
-
-"""
 import re
 import base64
 import requests
@@ -27,12 +22,12 @@ class Wallbase(object):
         self.collections = CollectionsList()
         self.searchbags = SearchbagList()
         self._login(username, password)
-                    #  First thing we need to do: log the user in
 
     def _login(self, username, password):
         response = session.post("%suser/login" % URL,
                 data={"usrname": username,"pass":password},
                 allow_redirects=False)
+        self.cookies = response.cookies
         return response.cookies
 
     def get_collections(self):
@@ -55,11 +50,24 @@ class Wallbase(object):
 
     def add_collection(self, collname, permission=0):
         response = session.post(
-            "%suser/favorites_new/collection/%d" % (URL, randint(1,1000)), data={"title": collname, "permissions": permission}, headers=jsonheaders, allow_redirects=False)
+            "%suser/favorites_new/collection/%d" % (URL, randint(1,1000)), data={"title": collname, "permissions": permission}, headers=jsonheaders)
         if response.status_code == 200:
-            return True
+            return response.content.split("|")[1]
         else:
             return False
+
+    def del_collection(self, coll_id):
+        response = session.get("%suser/favorites_delete/coll/%d/%d" % (URL, coll_id, randint(1, 1000)), headers=jsonheaders)
+        if response.status_code == 200:
+            if response.content == "1":
+                return True
+        return False
+
+    def add_to_favorites(self, wall_id, coll_id):
+        response = session.get("%suser/favorites_new/thumb/%d/%d/%d" % (URL, wall_id, coll_id, randint(1, 1000)), headers=jsonheaders)
+        if response.status_code == 200:
+            return True
+        return False
 
     def search(self, query, page=None, **kwargs):
         """Search for something on wallbase.cc this can be a normal String or a tag like "tag:12345"
