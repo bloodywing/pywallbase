@@ -86,35 +86,39 @@ class Wallbase(object):
         searchbag = Searchbag(query)
         self.searchbags.append(searchbag)
 
-        if not searchbag.wallpapers:
-            while True:
+        while True:
 
-                if page is not None:
-                    page_offset = page * data.get("thpp")
+            if page is not None:
+                page_offset = page * data.get("thpp")
 
-                response = session.post(
-                    "%ssearch/%d" % (URL, page_offset), data=data, headers=jsonheaders
-                )
+            response = session.post(
+                "%ssearch/%d" % (URL, page_offset), data=data, headers=jsonheaders
+            )
 
-                if not len(response.json()):
-                    return searchbag.wallpapers
-                else:
-                    json = response.json()
-                    for w in json:
-                        if w is not None:
-                            try:
-                                tags = w["attrs"]["wall_tags"].split("|")[0::4]
-                            except AttributeError:
-                                tags = []
-                            searchbag.wallpapers.append(
-                                Wallpaper(wid=int(w["id"]), cid=int(w["attrs"]["wall_cat_id"]), wall_imgtype=int(w["attrs"]["wall_imgtype"]), tags=tags)
-                            )
-                        else:
-                            return searchbag.wallpapers
-                    page_offset += data.get("thpp")
-                
-                if page is not None:
-                    return searchbag.wallpapers
+            page_offset += data.get("thpp")
+
+            if len(response.json()):
+                json = response.json()
+                for w in json:
+                    if w is not None:
+                        
+                        try:
+                            tags = w["attrs"]["wall_tags"].split("|")[0::4]
+                        except AttributeError:
+                            tags = []
+                        
+                        searchbag.wallpapers.append(
+                            Wallpaper(wid=int(w["id"]), 
+                                      cid=int(w["attrs"]["wall_cat_id"]),
+                                      wall_imgtype=int(w["attrs"]["wall_imgtype"]),
+                                      tags=tags
+                                      )
+                        )
+                    else:
+                        return searchbag.wallpapers
+                        
+            if page is not None:
+                break 
         return searchbag.wallpapers
 
     def get_wallpapers_by_cid(self, cid):
