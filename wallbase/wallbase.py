@@ -98,7 +98,12 @@ class Wallbase(object):
 
         total_pages = int(ceil(total_wp / float(data.get('thpp'))))
 
-        for page in range(1, total_pages):
+        if page:
+            page_range = page
+        else:
+            page_range = range(1, total_pages)
+
+        for page in page_range:
 
             response = session.post(
                 "%ssearch/%d" % (URL, page * data.get('thpp')), data=data, headers=jsonheaders
