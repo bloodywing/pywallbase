@@ -9,6 +9,6 @@ setup(name="wallbase",
       author="Pierre Geier 'epicmuffin'",
       author_email="muffin@tastyespresso.de",
       url="https://github.com/bloodywing",
-      packages=["wallbasefs"],
+      packages=["wallbase"],
       license = "Emailware",
       install_requires=["requests"])

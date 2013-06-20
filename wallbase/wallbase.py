@@ -1,11 +1,7 @@
-"""Wallbase.cc library used by wallbasefs
-
-.. moduleauthor:: Pierre Geier <pierre@neocomy.net>
-
-"""
 import re
 import base64
 import requests
+from math import ceil
 from random import randint
 from HTMLParser import HTMLParser
 
@@ -27,12 +23,12 @@ class Wallbase(object):
         self.collections = CollectionsList()
         self.searchbags = SearchbagList()
         self._login(username, password)
-                    #  First thing we need to do: log the user in
 
     def _login(self, username, password):
         response = session.post("%suser/login" % URL,
                 data={"usrname": username,"pass":password},
                 allow_redirects=False)
+        self.cookies = response.cookies
         return response.cookies
 
     def get_collections(self):
@@ -55,11 +51,24 @@ class Wallbase(object):
 
     def add_collection(self, collname, permission=0):
         response = session.post(
-            "%suser/favorites_new/collection/%d" % (URL, randint(1,1000)), data={"title": collname, "permissions": permission}, headers=jsonheaders, allow_redirects=False)
+            "%suser/favorites_new/collection/%d" % (URL, randint(1,1000)), data={"title": collname, "permissions": permission}, headers=jsonheaders)
         if response.status_code == 200:
-            return True
+            return response.content.split("|")[1]
         else:
             return False
+
+    def del_collection(self, coll_id):
+        response = session.get("%suser/favorites_delete/coll/%d/%d" % (URL, coll_id, randint(1, 1000)), headers=jsonheaders)
+        if response.status_code == 200:
+            if response.content == "1":
+                return True
+        return False
+
+    def add_to_favorites(self, wall_id, coll_id):
+        response = session.get("%suser/favorites_new/thumb/%d/%d/%d" % (URL, wall_id, coll_id, randint(1, 1000)), headers=jsonheaders)
+        if response.status_code == 200:
+            return True
+        return False
 
     def search(self, query, page=None, **kwargs):
         """Search for something on wallbase.cc this can be a normal String or a tag like "tag:12345"
@@ -78,36 +87,44 @@ class Wallbase(object):
         searchbag = Searchbag(query)
         self.searchbags.append(searchbag)
 
-        if not searchbag.wallpapers:
-            while True:
+        # determint how many wallpapers have been found
+        response = session.post("%ssearch" % (URL), data=data)
 
-                if page is not None:
-                    page_offset = page * data.get("thpp")
+        try:
+            total_wp = int(re.search("Search\.vars\.results_count\s\=\s(\d+)", response.content).group(1))
+        except:
+            print "No wps :("
+            total_wp = 0
 
-                response = session.post(
-                    "%ssearch/%d" % (URL, page_offset), data=data, headers=jsonheaders
-                )
+        total_pages = int(ceil(total_wp / float(data.get('thpp'))))
 
-                if not len(response.json()):
-                    return searchbag.wallpapers
-                else:
-                    json = response.json()
-                    for w in json:
-                        if w is not None:
-                            try:
-                                tags = w["attrs"]["wall_tags"].split("|")[0::4]
-                            except AttributeError:
-                                tags = []
-                            searchbag.wallpapers.append(
-                                Wallpaper(wid=int(w["id"]), cid=int(w["attrs"]["wall_cat_id"]), wall_imgtype=int(w["attrs"]["wall_imgtype"]), tags=tags)
-                            )
-                        else:
-                            return searchbag.wallpapers
-                    page_offset += data.get("thpp")
-                
-                if page is not None:
-                    return searchbag.wallpapers
+        for page in range(1, total_pages):
+
+            response = session.post(
+                "%ssearch/%d" % (URL, page * data.get('thpp')), data=data, headers=jsonheaders
+            )
+
+            if len(response.json()):
+                json = response.json()
+                for w in json:
+                    if w is not None:
+                        
+                        try:
+                            tags = w["attrs"]["wall_tags"].split("|")[0::4]
+                        except AttributeError:
+                            tags = []
+                        
+                        searchbag.wallpapers.append(
+                            Wallpaper(wid=int(w["id"]), 
+                                      cid=int(w["attrs"]["wall_cat_id"]),
+                                      wall_imgtype=int(w["attrs"]["wall_imgtype"]),
+                                      tags=tags
+                                      )
+                        )
+                    else:
+                        return searchbag.wallpapers
         return searchbag.wallpapers
+
 
     def get_wallpapers_by_cid(self, cid):
 
