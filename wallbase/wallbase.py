@@ -1,6 +1,7 @@
 import re
 import base64
 import requests
+from math import ceil
 from random import randint
 from HTMLParser import HTMLParser
 
@@ -86,16 +87,22 @@ class Wallbase(object):
         searchbag = Searchbag(query)
         self.searchbags.append(searchbag)
 
-        while True:
+        # determint how many wallpapers have been found
+        response = session.post("%ssearch" % (URL), data=data)
 
-            if page is not None:
-                page_offset = page * data.get("thpp")
+        try:
+            total_wp = int(re.search("Search\.vars\.results_count\s\=\s(\d+)", response.content).group(1))
+        except:
+            print "No wps :("
+            total_wp = 0
+
+        total_pages = int(ceil(total_wp / float(data.get('thpp'))))
+
+        for page in range(1, total_pages):
 
             response = session.post(
-                "%ssearch/%d" % (URL, page_offset), data=data, headers=jsonheaders
+                "%ssearch/%d" % (URL, page * data.get('thpp')), data=data, headers=jsonheaders
             )
-
-            page_offset += data.get("thpp")
 
             if len(response.json()):
                 json = response.json()
@@ -116,10 +123,8 @@ class Wallbase(object):
                         )
                     else:
                         return searchbag.wallpapers
-                        
-            if page is not None:
-                break 
         return searchbag.wallpapers
+
 
     def get_wallpapers_by_cid(self, cid):
 
