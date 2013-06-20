@@ -99,7 +99,7 @@ class Wallbase(object):
         total_pages = int(ceil(total_wp / float(data.get('thpp'))))
 
         if page:
-            page_range = page
+            page_range = [page]
         else:
             page_range = range(1, total_pages)
 
