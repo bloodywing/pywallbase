@@ -3,12 +3,12 @@
 from setuptools import setup, find_packages
 
 setup(name="wallbase",
-      version="0.1",
+      version="0.2.1",
       provides=['wallbase'],
       description="This provides access to wallbase.cc and their features",
       author="Pierre Geier 'epicmuffin'",
       author_email="muffin@tastyespresso.de",
       url="https://github.com/bloodywing",
-      packages=["wallbasefs"],
+      packages=["wallbase"],
       license = "Emailware",
       install_requires=["requests"])
