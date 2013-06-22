@@ -97,7 +97,7 @@ class Wallbase(object):
         searchbag = Searchbag(query, total_pages)
         self.searchbags.append(searchbag)
 
-        if page:
+        if page is not None:
             page_range = range(page, page+1)
         else:
             page_range = range(0, total_pages)
