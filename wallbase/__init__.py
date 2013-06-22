@@ -16,6 +16,5 @@ and could be broken from one day to the next.
 Questions, comments? Want to contribute? seek me out on irc://irc.rizon.net/#wallbase 
 """
 __author__ = 'Pierre Geier <pierre@neocomy.net>'
-__version__ = '0.2.1'
 
 from .wallbase import Wallbase

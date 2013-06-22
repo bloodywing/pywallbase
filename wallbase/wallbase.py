@@ -84,9 +84,6 @@ class Wallbase(object):
 
         data.update(kwargs)
 
-        searchbag = Searchbag(query)
-        self.searchbags.append(searchbag)
-
         # determint how many wallpapers have been found
         response = session.post("%ssearch" % (URL), data=data)
 
@@ -97,11 +94,13 @@ class Wallbase(object):
             total_wp = 0
 
         total_pages = int(ceil(total_wp / float(data.get('thpp'))))
+        searchbag = Searchbag(query, total_pages)
+        self.searchbags.append(searchbag)
 
         if page:
-            page_range = [page]
+            page_range = range(page, page+1)
         else:
-            page_range = range(1, total_pages)
+            page_range = range(0, total_pages)
 
         for page in page_range:
 
@@ -194,9 +193,10 @@ class Collection(object):
 
 class Searchbag(object):
 
-    def __init__(self, query):
+    def __init__(self, query, total_pages):
         self.query = query
         self.wallpapers = []
+        self.total_pages = total_pages
 
     @property
     def wallpaper_count(self):
